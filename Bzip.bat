@@ -8,17 +8,19 @@ set "Gld=[93m" & set "Blu=[94m" & set "Red=[91m" & set "Grn=[92m" & set "Wht
 set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
-set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=35.4"
+set "ver=36.0"
 
-:: --- CLOUD REGS ---
+:: --- CLOUD LINKS ---
 set "github_raw=https://githubusercontent.com"
-:: New "Clean-Only" Link
-set "chat_api=https://keyvalue.xyz"
 
-:: --- AUTO-UPDATE ---
-powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } } else { exit 0 }" >nul 2>&1
+:: --- AUTO-UPDATE ENGINE ---
+title Bzip ENGINE [Checking Cloud...]
+powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
+    cls
+    echo !accent!-----------------------------------------------------------!Rst!
+    echo  [!] NEW VERSION DETECTED. UPDATING ENGINE...
+    echo !accent!-----------------------------------------------------------!Rst!
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_New.bat' -ErrorAction SilentlyContinue"
     echo @echo off > updater.bat
     echo timeout /t 1 ^>nul >> updater.bat
@@ -31,9 +33,8 @@ if %errorlevel% EQU 1 (
 )
 
 :: --- DEFAULT SETTINGS ---
-set "chat_tag=NONE"
-set "pass_bypass=ON"
 set "accent=%Gld%"
+set "pass_bypass=ON"
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
 
 :: Window Setup
@@ -62,66 +63,57 @@ echo %accent%-------------------------------------------------------------------
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo.
-echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
-echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
-echo    %Blu%3]%Rst% AUTO-DEPLOY      %Blu%7]%Rst% PERF STATS     %accent%[R]%Rst% RES CHECK    [X] EXIT
+echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER
+echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER
+echo    %Blu%3]%Rst% AUTO-DEPLOY      %Blu%7]%Rst% PERF STATS     %accent%[R]%Rst% RES CHECK
+echo    %Blu%4]%Rst% DEBUG LOGS       %Blu%8]%Rst% TO-DO LIST     %accent%[S]%Rst% SETTINGS
+echo.
+echo                                                                    %Red%[X]%Rst% EXIT APP
 echo.
 set /p choice=  %accent%ENTER SELECTION: %Rst%
 
 if /i "!choice!"=="s" goto settings
-if /i "!choice!"=="k" goto chat
+if /i "!choice!"=="8" goto todo
 if /i "!choice!"=="x" exit
+if "!choice!"=="1" set "pver=1" & set "fname=1.8.9 template" & goto create
+if "!choice!"=="2" set "pver=45" & set "fname=26.1.2 template" & goto create
 goto menu
-
-:chat
-cls
-echo %accent%[ DOWNLOADING TEXT VAULT... ]%Rst%
-:: This line strips the numbers/website junk and ONLY keeps the text
-powershell -Command "$v = Invoke-RestMethod -Uri '!chat_api!'; if($v -is [string] -and $v -notmatch '<html'){ $v | Out-File '!chatlog!' } else { 'System: Vault Refreshed. Send a message!' | Out-File '!chatlog!' }" 2>nul
-cls
-echo %accent%----------------------------------------------------------------------------%Rst%
-echo                            [ GLOBAL CHAT ]
-echo %accent%----------------------------------------------------------------------------%Rst%
-if exist "!chatlog!" (type "!chatlog!")
-echo.
-echo %accent%----------------------------------------------------------------------------%Rst%
-echo   TAG: !Blu!!chat_tag!!Rst!
-echo   1] Send Message   [R] Refresh   [X] Back
-set /p cc= Choice: 
-
-if /i "%cc%"=="r" goto chat
-if /i "%cc%"=="x" goto menu
-if "%cc%"=="1" (
-    if "!chat_tag!"=="NONE" echo !Red!Set a tag in settings!Rst! & pause & goto chat
-    set /p "msg= Message: "
-    if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
-    
-    echo !accent![ UPLOADING TEXT... ]!Rst%
-    :: This pushes ONLY the text, no random numbers
-    powershell -Command "$old = Invoke-RestMethod -Uri '!chat_api!'; if($old -isnot [string] -or $old -match '<html'){$old=''}; $new = $old + \"`n!line!\"; $lines = $new -split \"`n\"; if($lines.Count -gt 15){$new = $lines[-15..-1] -join \"`n\"}; Invoke-RestMethod -Method Post -Uri '!chat_api!' -Body ($new | Out-String)" >nul 2>&1
-    timeout /t 1 >nul
-    goto chat
-)
-goto chat
 
 :settings
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo   [ ENGINE SETTINGS ]
+echo %accent%----------------------------------------------------------------------------%Rst%
 echo.
 echo  [A] Accent Color
-echo  [B] Change Chat Tag: [ !chat_tag! ]
-echo  [C] Password Bypass: [ %pass_bypass% ]
+echo  [B] Password Bypass: [ %pass_bypass% ]
 echo.
 echo  [X] SAVE ^& BACK
 echo %accent%----------------------------------------------------------------------------%Rst%
 set /p sc= Selection: 
+
 if /i "%sc%"=="x" goto save_config
 if /i "%sc%"=="A" (set /p cp= Color: & set "accent=!cp!" & goto settings)
-if /i "%sc%"=="B" (set /p chat_tag= New Tag: & goto settings)
-if /i "%sc%"=="C" (if /i "%pass_bypass%"=="ON" (set "pass_bypass=OFF") else (set "pass_bypass=ON") & goto settings)
+if /i "%sc%"=="B" (if /i "%pass_bypass%"=="ON" (set "pass_bypass=OFF") else (set "pass_bypass=ON") & goto settings)
 goto settings
 
 :save_config
-(echo accent=%accent%& echo chat_tag=%chat_tag%& echo pass_bypass=%pass_bypass%) > "%config%"
+(echo accent=%accent%& echo pass_bypass=%pass_bypass%) > "%config%"
 goto menu
+
+:todo
+cls
+echo %accent%[ BZIP TO-DO LIST ]%Rst%
+set "todofile=%vault%\Bzip_ToDo.txt"
+if exist "!todofile!" (type "!todofile!") else (echo Your list is empty.)
+echo.
+echo [1] Add Note  [2] Clear All  [X] Back
+set /p tc= Choice: 
+if "%tc%"=="1" (set /p "n=Note: " & echo - !n! >> "!todofile!" & goto todo)
+if "%tc%"=="2" (del "!todofile!" & goto todo)
+goto menu
+
+:create
+cls
+md "temp" 2>nul
+echo Done! & pause & goto menu
