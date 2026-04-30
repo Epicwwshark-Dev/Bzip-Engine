@@ -34,8 +34,10 @@ if %errorlevel% EQU 1 (
 set "maincol=0B"
 set "owner_display=EPICWWSHARK"
 set "user_key=202020"
+set "stat_msg=OPERATIONAL"
 if exist "%config%" (for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b") >nul 2>&1
 
+:: Window Setup
 mode con: cols=120 lines=45
 color !maincol!
 title Bzip ENGINE [!ver!]
@@ -48,14 +50,15 @@ echo ---------------------------------------------------------------------------
 echo.
 set /p "login=  ENTER ACCESS KEY: "
 if "!login!"=="232323434343" (set "access_level=Owner" & set "stat_msg=OWNER MODE" & goto menu)
-if "!login!"=="!user_key!" (set "access_level=User" & set "stat_msg=OPERATIONAL" & goto menu)
-if "!login!"=="202020" (set "access_level=User" & set "stat_msg=OPERATIONAL" & goto menu)
+if "!login!"=="!user_key!" (set "access_level=User" & goto menu)
+if "!login!"=="202020" (set "access_level=User" & goto menu)
 goto password
 
 :menu
 cls
 echo ------------------------------------------------------------------------------------------------------------------------
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
+echo   VERSION: !ver!                                                                               TYPE: JAVA ENGINE
 echo ------------------------------------------------------------------------------------------------------------------------
 echo   OFFICIAL OWNER: !owner_display!  (!access_level!)
 echo ------------------------------------------------------------------------------------------------------------------------
