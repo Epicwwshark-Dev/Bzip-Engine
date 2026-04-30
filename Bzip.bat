@@ -9,20 +9,21 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.5"
+set "ver=34.6"
 
-:: --- CLOUD LINKS ---
+:: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-set "cloud_id=bzip_gold_v5_global"
+:: NEW STABLE CLOUD ID
+set "cloud_id=bzip_gold_final_sync"
 
-:: --- AUTO-UPDATE ENGINE ---
+:: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
-    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_New.bat' -ErrorAction SilentlyContinue"
+    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
     echo @echo off > updater.bat
     echo timeout /t 1 ^>nul >> updater.bat
     echo del "%~f0" >> updater.bat
-    echo ren "Bzip_New.bat" "Bzip.bat" >> updater.bat
+    echo ren "Bzip_Update.bat" "Bzip.bat" >> updater.bat
     echo start "" "Bzip.bat" >> updater.bat
     echo del updater.bat >> updater.bat
     start /b "" updater.bat
@@ -75,8 +76,8 @@ goto menu
 :chat
 cls
 echo %accent%[ SYNCING GLOBAL CHAT... ]%Rst%
-:: Pull only the last 20 messages to prevent lag and cloud overflow
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $lines = $v -split \"`n\"; if($lines.Count -gt 20){ $newV = $lines[-20..-1] -join \"`n\"; $newV | Out-File '!chatlog!' } else { $v | Out-File '!chatlog!' } } else { 'Chat is empty. Be the first to speak!' | Out-File '!chatlog!' }" 2>nul
+:: NEW PULL LOGIC
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($v -and $v -ne 'error'){ $v | Out-File '!chatlog!' } else { 'Welcome to the New Cloud Chat!' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -95,9 +96,9 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
-    :: --- NEW ROBUST SEND ENGINE ---
-    echo !accent![ SENDING... ]!Rst!
-    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
+    :: NEW PUSH LOGIC (Ultra Fast)
+    echo !accent![ SENDING TO CLOUD... ]!Rst!
+    powershell -Command "$old = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; $new = $old + \"`n!line!\"; Invoke-RestMethod -Method Post -Uri 'https://keyvalue.xyz' -Body $new" >nul 2>&1
     timeout /t 1 >nul
     goto chat
 )
@@ -117,7 +118,6 @@ echo.
 echo  [X] SAVE ^& BACK
 echo %accent%----------------------------------------------------------------------------%Rst%
 set /p sc= Selection: 
-
 if /i "%sc%"=="x" goto save_config
 if /i "%sc%"=="A" (set /p cp= Color: & set "accent=!cp!" & goto settings)
 if /i "%sc%"=="B" (set /p chat_tag= New Tag: & goto settings)
