@@ -9,12 +9,12 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=35.1"
+set "ver=35.2"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: Using the same stable ID
-set "cloud_id=b36e5200"
+:: New stable link for reading the chat
+set "chat_read=https://keyvalue.xyz"
 
 :: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } } else { exit 0 }" >nul 2>&1
@@ -22,7 +22,7 @@ if %errorlevel% EQU 1 (
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
     echo @echo off > updater.bat
     echo timeout /t 1 ^>nul >> updater.bat
-    echo del "%~f0" >> updater.bat
+    echo del "%~nx0" >> updater.bat
     echo ren "Bzip_Update.bat" "Bzip.bat" >> updater.bat
     echo start "" "Bzip.bat" >> updater.bat
     echo del updater.bat >> updater.bat
@@ -36,6 +36,7 @@ set "pass_bypass=ON"
 set "accent=%Gld%"
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
 
+:: Window Setup
 mode con: cols=120 lines=45
 title Bzip ENGINE [!ver!]
 chcp 65001 >nul
@@ -57,9 +58,9 @@ goto password
 cls
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo.
 echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
 echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
@@ -74,9 +75,8 @@ goto menu
 
 :chat
 cls
-echo %accent%[ DOWNLOADING CLOUD DATA... ]%Rst%
-:: Pull Logic
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($v -and $v -notmatch '<html'){ $v | Out-File '!chatlog!' } else { 'System: New Chat Online.' | Out-File '!chatlog!' }" 2>nul
+echo %accent%[ CONNECTING TO GLOBAL VAULT... ]%Rst%
+powershell -Command "$v = Invoke-RestMethod -Uri '!chat_read!'; if($v -and $v -notmatch '<html'){ $v | Out-File '!chatlog!' } else { 'System: Chat Online.' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -95,10 +95,10 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
-    :: Push Logic with 2-second upload buffer
-    echo !accent![ SENDING... ]!Rst%
-    powershell -Command "$old = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($old -match '<html'){$old=''}; $new = $old + \"`n!line!\"; Invoke-RestMethod -Method Post -Uri 'https://keyvalue.xyz' -Body $new" >nul 2>&1
-    timeout /t 2 >nul
+    :: --- ULTRA STABLE POST ENGINE ---
+    echo !accent![ UPLOADING... ]!Rst%
+    powershell -Command "$old = Invoke-RestMethod -Uri '!chat_read!'; if($old -match '<html'){$old=''}; $new = $old + \"`n!line!\"; $lines = $new -split \"`n\"; if($lines.Count -gt 15){$new = $lines[-15..-1] -join \"`n\"}; Invoke-RestMethod -Method Post -Uri '!chat_read!' -Body $new" >nul 2>&1
+    timeout /t 1 >nul
     goto chat
 )
 goto chat
