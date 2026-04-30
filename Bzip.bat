@@ -9,28 +9,29 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.0"
+set "ver=34.1"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: Secret Cloud ID (Unique to your app)
-set "cloud_bin=bzip_gold_chat_!computername!"
+:: UNIQUE CLOUD ID (Keep this the same for everyone to talk)
+set "cloud_id=bzip_gold_global_vault"
 
 :: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches[1]; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
-    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_New.bat' -ErrorAction SilentlyContinue"
-    echo @echo off > updater.bat
-    echo timeout /t 1 ^>nul >> updater.bat
-    echo del "%~nx0" >> updater.bat
-    echo ren "Bzip_New.bat" "%~nx0" >> updater.bat
-    echo start "" "%~nx0" >> updater.bat
-    echo del updater.bat >> updater.bat
-    start /b "" updater.bat
+    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
+    echo @echo off > update.bat
+    echo timeout /t 1 ^>nul >> update.bat
+    echo del "%~nx0" >> update.bat
+    echo ren "Bzip_Update.bat" "%~nx0" >> update.bat
+    echo start "" "%~nx0" >> update.bat
+    echo del update.bat >> update.bat
+    start /b "" update.bat
     exit
 )
 
-:: --- DEFAULT SETTINGS ---
+:: --- DEFAULTS ---
+set "accent=%Gld%"
 set "chat_tag=NONE"
 set "pass_bypass=ON"
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
@@ -58,16 +59,15 @@ goto password
 cls
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo.
 echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
 echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
 echo    %Blu%3]%Rst% AUTO-DEPLOY      %Blu%7]%Rst% PERF STATS     %accent%[R]%Rst% RES CHECK    [X] EXIT
 echo.
 set /p choice=  %accent%ENTER SELECTION: %Rst%
-
 if /i "!choice!"=="s" goto settings
 if /i "!choice!"=="k" goto chat
 if /i "!choice!"=="x" exit
@@ -76,8 +76,7 @@ goto menu
 :chat
 cls
 echo %accent%[ SYNCING GLOBAL CHAT... ]%Rst%
-:: This line pulls the last 10 messages from the public cloud bin
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $v | Out-File '!chatlog!' } else { 'No messages yet.' | Out-File '!chatlog!' }" 2>nul
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $v | Out-File '!chatlog!' } else { 'Welcome to the Global Chat!' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -90,13 +89,15 @@ set /p cc= Choice:
 if "%cc%"=="1" (
     if "!chat_tag!"=="NONE" echo !Red!Set a tag first!Rst! & pause & goto chat
     set /p "msg= Message: "
-    if "%access_level%"=="Owner" (set "line=%Red%[OWNER] !chat_tag!%Rst%: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
-    :: This line pushes your message to the cloud bin
-    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; $new = $old + \"`r`n!line!\"; Invoke-RestMethod -Uri \"https://workers.dev($new | Out-String)\"" >nul 2>&1
+    if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
+    
+    :: --- STABLE SEND LOGIC (URL ENCODED) ---
+    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
     goto chat
 )
 if "%cc%"=="2" (set /p "chat_tag= New Tag: " & goto chat)
-goto menu
+if /i "%cc%"=="x" goto menu
+goto chat
 
 :settings
 cls
