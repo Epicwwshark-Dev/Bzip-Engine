@@ -10,23 +10,26 @@ if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "keyfile=%vault%\Bzip_Key.sys"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=30.0"
+set "ver=31.0"
 
 :: --- CLOUD LINKS ---
-set "github_raw=PASTE_BZIP_BAT_LINK_HERE"
+:: 1. PASTE YOUR BZIP.BAT RAW LINK BETWEEN THE QUOTES BELOW:
+set "github_raw=PASTE_BZIP_BAT_RAW_LINK_HERE"
+
+:: 2. YOUR CHAT LINK IS ALREADY ADDED BELOW:
 set "chat_url=https://githubusercontent.com"
 
 :: --- SILENT AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches[1]; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } }" >nul 2>&1
 if %errorlevel% EQU 1 (
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_New.bat'"
-    echo @echo off > update.bat
-    echo timeout /t 1 ^>nul >> update.bat
-    echo del "%~nx0" >> update.bat
-    echo ren "Bzip_New.bat" "%~nx0" >> update.bat
-    echo start "" "%~nx0" >> update.bat
-    echo del update.bat >> update.bat
-    start /b "" update.bat
+    echo @echo off > updater.bat
+    echo timeout /t 1 ^>nul >> updater.bat
+    echo del "%~nx0" >> updater.bat
+    echo ren "Bzip_New.bat" "%~nx0" >> updater.bat
+    echo start "" "%~nx0" >> updater.bat
+    echo del updater.bat >> updater.bat
+    start /b "" updater.bat
     exit
 )
 
@@ -37,6 +40,14 @@ set "pass_bypass=ON"
 set "maint_mode=OFF"
 
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
+if not exist "%keyfile%" echo bzip>"%keyfile%"
+set /p user_key=<"%keyfile%"
+set "user_key=!user_key: =!"
+
+:: Window Setup
+mode con: cols=120 lines=45
+title Bzip ENGINE [!ver!]
+chcp 65001 >nul
 
 :: --- BYPASS CHECK ---
 if /i "%pass_bypass%"=="ON" (set "access_level=Guest" & set "stat_msg=%Grn%GUEST MODE%Rst%" & goto menu)
@@ -49,9 +60,7 @@ echo %accent%-------------------------------------------------------------------
 set "login="
 set /p "login=  ENTER ACCESS KEY: "
 if "%login%"=="232323434343" (set "access_level=Owner" & set "stat_msg=%Red%[ OWNER MODE ]%Rst%" & goto menu)
-set /p user_key=<"%keyfile%" 2>nul
 if "!login!"=="!user_key!" (set "access_level=User" & set "stat_msg=%Grn%OPERATIONAL%Rst%" & goto menu)
-if "!login!"=="bzip" (set "access_level=User" & set "stat_msg=%Grn%OPERATIONAL%Rst%" & goto menu)
 goto password
 
 :menu
@@ -72,8 +81,6 @@ set /p choice=  %accent%ENTER SELECTION: %Rst%
 if /i "!choice!"=="s" goto settings
 if /i "!choice!"=="k" goto chat
 if /i "!choice!"=="x" exit
-if "!choice!"=="1" set "pver=1" & set "fname=1.8.9 template" & goto create
-if "!choice!"=="2" set "pver=45" & set "fname=26.1.2 template" & goto create
 goto menu
 
 :chat
@@ -94,7 +101,6 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=%Red%[OWNER] !chat_tag!%Rst%: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     echo !line! >> "!chatlog!"
-    echo. & echo !Grn!Saved Locally. Paste new lines to GitHub chat.txt to share!Rst! & pause
     goto chat
 )
 if "%cc%"=="2" (set /p "chat_tag= New Tag: " & goto chat)
@@ -105,29 +111,16 @@ goto chat
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo   [ ENGINE SETTINGS ]
-echo %accent%----------------------------------------------------------------------------%Rst%
 echo  [A] Accent Color      [C] Password Bypass: %pass_bypass%
 echo  [B] Change Password   [D] RESET ENGINE
-if "%access_level%"=="Owner" (
-    echo  [E] Toggle Maintenance: %maint_mode%
-)
 echo.
 echo  [X] SAVE ^& BACK
 set /p sc= Selection: 
 if /i "%sc%"=="x" goto save_config
 if /i "%sc%"=="A" (set /p cp= Color: & set "accent=!cp!" & goto settings)
 if /i "%sc%"=="C" (if "%pass_bypass%"=="ON" (set "pass_bypass=OFF") else (set "pass_bypass=ON") & goto settings)
-if /i "%sc%"=="E" (if "%maint_mode%"=="ON" (set "maint_mode=OFF") else (set "maint_mode=ON") & goto settings)
 goto settings
 
 :save_config
-(echo accent=%accent%& echo chat_tag=%chat_tag%& echo pass_bypass=%pass_bypass%& echo maint_mode=%maint_mode%) > "%config%"
+(echo accent=%accent%& echo chat_tag=%chat_tag%& echo pass_bypass=%pass_bypass%) > "%config%"
 goto menu
-
-:create
-cls
-md "temp\assets\minecraft\textures" 2>nul
-(echo {"pack":{"pack_format":%pver%,"description":"Bzip Template"}}) > "temp\pack.mcmeta"
-powershell -command "Compress-Archive -Path 'temp\*' -DestinationPath '%fname%.zip' -Force"
-rd /s /q "temp"
-echo Done! & pause & goto menu
