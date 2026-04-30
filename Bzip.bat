@@ -2,22 +2,22 @@
 setlocal enabledelayedexpansion
 
 :: --- COLORS ---
-set "Gld=[93m" & set "Blu=[94m" & set "Red=[91m" & set "Grn=[92m" & set "Rst=[0m"
+set "Gld=[93m" & set "Blu=[94m" & set "Red=[91m" & set "Grn=[92m" & set "Wht=[97m" & set "Rst=[0m"
 
 :: --- SETUP ---
 set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.9"
+set "ver=35.0"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: NEW CLEAN VAULT ID
-set "cloud_id=bzip_vault_final_shield"
+:: NEW PRIVATE CLOUD STORAGE
+set "cloud_key=bzip_gold_!computername!_v35"
 
-:: --- SILENT AUTO-UPDATE ---
-powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
+:: --- AUTO-UPDATE ---
+powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
     echo @echo off > updater.bat
@@ -57,9 +57,9 @@ goto password
 cls
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo.
 echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
 echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
@@ -74,9 +74,9 @@ goto menu
 
 :chat
 cls
-echo %accent%[ FILTERING JUNK CODE... ]%Rst%
-:: Pure-Text Slicer: Only keeps lines starting with [ (Chat messages)
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $lines = $v -split \"`n\" | Where-Object { $_ -match '^\\[' }; if($lines){ $lines | Out-File '!chatlog!' } else { 'System: No messages yet.' | Out-File '!chatlog!' } } else { 'System: Vault Empty.' | Out-File '!chatlog!' }" 2>nul
+echo %accent%[ CONNECTING TO NEW CLOUD... ]%Rst%
+:: Using kvstore.io - much cleaner and no ads
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($v -and $v -notmatch '<html'){ $v | Out-File '!chatlog!' } else { 'System: New Chat Online.' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -95,8 +95,8 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
-    :: Safe Send: Forces the cloud to accept the new message list
-    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; if($old -match '<html' -or $old -match '<!DOCTYPE'){$old=''}; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
+    echo !accent![ SENDING... ]!Rst%
+    powershell -Command "$old = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($old -match '<html'){$old=''}; $new = $old + \"`n!line!\"; Invoke-RestMethod -Method Post -Uri 'https://keyvalue.xyz' -Body $new" >nul 2>&1
     timeout /t 1 >nul
     goto chat
 )
