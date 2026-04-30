@@ -9,31 +9,32 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.1"
+set "ver=34.2"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: UNIQUE CLOUD ID (Keep this the same for everyone to talk)
-set "cloud_id=bzip_gold_global_vault"
+set "cloud_id=bzip_gold_global_v2"
 
 :: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches[1]; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
-    echo @echo off > update.bat
-    echo timeout /t 1 ^>nul >> update.bat
-    echo del "%~nx0" >> update.bat
-    echo ren "Bzip_Update.bat" "%~nx0" >> update.bat
-    echo start "" "%~nx0" >> update.bat
-    echo del update.bat >> update.bat
-    start /b "" update.bat
+    echo @echo off > updater.bat
+    echo timeout /t 1 ^>nul >> updater.bat
+    echo del "%~nx0" >> updater.bat
+    echo ren "Bzip_Update.bat" "%~nx0" >> updater.bat
+    echo start "" "%~nx0" >> updater.bat
+    echo del updater.bat >> updater.bat
+    start /b "" updater.bat
     exit
 )
 
-:: --- DEFAULTS ---
+:: --- DEFAULT SETTINGS ---
 set "accent=%Gld%"
 set "chat_tag=NONE"
 set "pass_bypass=ON"
+
+:: Load Settings (This loads your saved tag!)
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
 
 :: Window Setup
@@ -59,9 +60,9 @@ goto password
 cls
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
-echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
+echo ------------------------------------------------------------------------------------------------------------------------
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
-echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
+echo ------------------------------------------------------------------------------------------------------------------------
 echo.
 echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
 echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
@@ -76,26 +77,34 @@ goto menu
 :chat
 cls
 echo %accent%[ SYNCING GLOBAL CHAT... ]%Rst%
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $v | Out-File '!chatlog!' } else { 'Welcome to the Global Chat!' | Out-File '!chatlog!' }" 2>nul
+:: Pull messages
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $v | Out-File '!chatlog!' } else { 'Welcome!' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
 echo %accent%----------------------------------------------------------------------------%Rst%
 if exist "!chatlog!" (type "!chatlog!")
+echo.
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo   TAG: !Blu!!chat_tag!!Rst!
-echo   1] Send Message   2] Change Tag   [X] Back
+echo   1] Send Message   2] Change Tag   [R] Refresh   [X] Back
 set /p cc= Choice: 
+
+if /i "%cc%"=="r" goto chat
 if "%cc%"=="1" (
-    if "!chat_tag!"=="NONE" echo !Red!Set a tag first!Rst! & pause & goto chat
+    if "!chat_tag!"=="NONE" echo !Red!Set a tag first in settings or chat!Rst! & pause & goto chat
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
-    
-    :: --- STABLE SEND LOGIC (URL ENCODED) ---
+    :: Encoded Push
     powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
     goto chat
 )
-if "%cc%"=="2" (set /p "chat_tag= New Tag: " & goto chat)
+if "%cc%"=="2" (
+    set /p "chat_tag= New Tag: "
+    :: Save tag immediately to config
+    (echo accent=%accent%& echo chat_tag=!chat_tag!& echo pass_bypass=%pass_bypass%) > "%config%"
+    goto chat
+)
 if /i "%cc%"=="x" goto menu
 goto chat
 
@@ -103,7 +112,9 @@ goto chat
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo  [A] Accent Color      [C] Password Bypass: %pass_bypass%
-echo  [B] Change Tag        [X] SAVE ^& BACK
+echo  [B] Change Tag        (Current: %chat_tag%)
+echo.
+echo  [X] SAVE ^& BACK
 set /p sc= Selection: 
 if /i "%sc%"=="x" goto save_config
 if /i "%sc%"=="A" (set /p cp= Color: & set "accent=!cp!" & goto settings)
