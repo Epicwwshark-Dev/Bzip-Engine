@@ -9,21 +9,21 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=35.3"
+set "ver=35.4"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: Using a more stable direct text bin
+:: New "Clean-Only" Link
 set "chat_api=https://keyvalue.xyz"
 
 :: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
-    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
+    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_New.bat' -ErrorAction SilentlyContinue"
     echo @echo off > updater.bat
     echo timeout /t 1 ^>nul >> updater.bat
     echo del "%~f0" >> updater.bat
-    echo ren "Bzip_Update.bat" "Bzip.bat" >> updater.bat
+    echo ren "Bzip_New.bat" "Bzip.bat" >> updater.bat
     echo start "" "Bzip.bat" >> updater.bat
     echo del updater.bat >> updater.bat
     start /b "" updater.bat
@@ -36,6 +36,7 @@ set "pass_bypass=ON"
 set "accent=%Gld%"
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
 
+:: Window Setup
 mode con: cols=120 lines=45
 title Bzip ENGINE [!ver!]
 chcp 65001 >nul
@@ -57,9 +58,9 @@ goto password
 cls
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
-echo ------------------------------------------------------------------------------------------------------------------------
+echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo.
 echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
 echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
@@ -74,9 +75,9 @@ goto menu
 
 :chat
 cls
-echo %accent%[ CONNECTING TO GLOBAL CHAT... ]%Rst%
-:: Try a clean download
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $v = Invoke-WebRequest -Uri '!chat_api!' -UseBasicParsing; if($v.Content -and $v.Content -notmatch '<html'){ $v.Content | Out-File '!chatlog!' } else { 'System: Chat is quiet. Send a message!' | Out-File '!chatlog!' }" 2>nul
+echo %accent%[ DOWNLOADING TEXT VAULT... ]%Rst%
+:: This line strips the numbers/website junk and ONLY keeps the text
+powershell -Command "$v = Invoke-RestMethod -Uri '!chat_api!'; if($v -is [string] -and $v -notmatch '<html'){ $v | Out-File '!chatlog!' } else { 'System: Vault Refreshed. Send a message!' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -95,10 +96,10 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
-    echo !accent![ SENDING... ]!Rst%
-    :: This uses a forced POST method with TLS 1.2 security to make sure it hits the server
-    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $old = (Invoke-WebRequest -Uri '!chat_api!' -UseBasicParsing).Content; if($old -match '<html'){$old=''}; $new = $old + \"`n!line!\"; $lines = $new -split \"`n\"; if($lines.Count -gt 15){$new = $lines[-15..-1] -join \"`n\"}; Invoke-WebRequest -Method Post -Uri '!chat_api!' -Body $new -ContentType 'text/plain' -UseBasicParsing" >nul 2>&1
-    timeout /t 2 >nul
+    echo !accent![ UPLOADING TEXT... ]!Rst%
+    :: This pushes ONLY the text, no random numbers
+    powershell -Command "$old = Invoke-RestMethod -Uri '!chat_api!'; if($old -isnot [string] -or $old -match '<html'){$old=''}; $new = $old + \"`n!line!\"; $lines = $new -split \"`n\"; if($lines.Count -gt 15){$new = $lines[-15..-1] -join \"`n\"}; Invoke-RestMethod -Method Post -Uri '!chat_api!' -Body ($new | Out-String)" >nul 2>&1
+    timeout /t 1 >nul
     goto chat
 )
 goto chat
