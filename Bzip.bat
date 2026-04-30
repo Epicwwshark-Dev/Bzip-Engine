@@ -10,9 +10,9 @@ if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "keyfile=%vault%\Bzip_Key.sys"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=31.1"
+set "ver=32.0"
 
-:: --- CLOUD LINKS (FIXED URLS) ---
+:: --- CLOUD LINKS (FIXED) ---
 set "github_raw=https://githubusercontent.com"
 set "chat_url=https://githubusercontent.com"
 
@@ -25,7 +25,7 @@ if %errorlevel% EQU 1 (
     echo -----------------------------------------------------------
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
     echo @echo off > updater.bat
-    echo timeout /t 1 /nobreak ^>nul >> updater.bat
+    echo timeout /t 1 ^>nul >> updater.bat
     echo del "%~nx0" >> updater.bat
     echo ren "Bzip_Update.bat" "%~nx0" >> updater.bat
     echo start "" "%~nx0" >> updater.bat
