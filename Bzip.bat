@@ -2,21 +2,21 @@
 setlocal enabledelayedexpansion
 
 :: --- COLORS ---
-set "Gld=[93m" & set "Blu=[94m" & set "Red=[91m" & set "Grn=[92m" & set "Wht=[97m" & set "Rst=[0m"
+set "Gld=[93m" & set "Blu=[94m" & set "Red=[91m" & set "Grn=[92m" & set "Rst=[0m"
 
 :: --- SETUP ---
 set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.8"
+set "ver=34.9"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: BRAND NEW PRIVATE VAULT ID
-set "cloud_id=bzip_gold_v34_8_safe"
+:: NEW CLEAN VAULT ID
+set "cloud_id=bzip_vault_final_shield"
 
-:: --- AUTO-UPDATE ---
+:: --- SILENT AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
@@ -31,12 +31,11 @@ if %errorlevel% EQU 1 (
 )
 
 :: --- DEFAULT SETTINGS ---
-set "accent=%Gld%"
 set "chat_tag=NONE"
 set "pass_bypass=ON"
+set "accent=%Gld%"
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
 
-:: Window Setup
 mode con: cols=120 lines=45
 title Bzip ENGINE [!ver!]
 chcp 65001 >nul
@@ -58,9 +57,9 @@ goto password
 cls
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
-echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
+echo ------------------------------------------------------------------------------------------------------------------------
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
-echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
+echo ------------------------------------------------------------------------------------------------------------------------
 echo.
 echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
 echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
@@ -75,9 +74,9 @@ goto menu
 
 :chat
 cls
-echo %accent%[ REFRESHING VAULT... ]%Rst%
-:: Pull only text data, ignore website junk
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v -match '<!DOCTYPE' -or $v -match '<html'){ 'System: Vault Refreshed.' | Out-File '!chatlog!' } elseif($v){ $v | Out-File '!chatlog!' } else { 'System: Vault Empty.' | Out-File '!chatlog!' }" 2>nul
+echo %accent%[ FILTERING JUNK CODE... ]%Rst%
+:: Pure-Text Slicer: Only keeps lines starting with [ (Chat messages)
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $lines = $v -split \"`n\" | Where-Object { $_ -match '^\\[' }; if($lines){ $lines | Out-File '!chatlog!' } else { 'System: No messages yet.' | Out-File '!chatlog!' } } else { 'System: Vault Empty.' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -96,8 +95,8 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
-    :: Safe Send: Blocks messy code from returning
-    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; if($old -match '<!DOCTYPE'){$old=''}; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
+    :: Safe Send: Forces the cloud to accept the new message list
+    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; if($old -match '<html' -or $old -match '<!DOCTYPE'){$old=''}; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
     timeout /t 1 >nul
     goto chat
 )
