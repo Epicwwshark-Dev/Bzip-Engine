@@ -9,12 +9,12 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.6"
+set "ver=34.7"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: NEW STABLE CLOUD ID
-set "cloud_id=bzip_gold_final_sync"
+:: FRESH CLEAN ID
+set "cloud_id=bzip_gold_titanium_sync"
 
 :: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
@@ -76,8 +76,8 @@ goto menu
 :chat
 cls
 echo %accent%[ SYNCING GLOBAL CHAT... ]%Rst%
-:: NEW PULL LOGIC
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($v -and $v -ne 'error'){ $v | Out-File '!chatlog!' } else { 'Welcome to the New Cloud Chat!' | Out-File '!chatlog!' }" 2>nul
+:: Use Simple REST Pull
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $v | Out-File '!chatlog!' } else { 'Welcome!' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -96,9 +96,9 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
-    :: NEW PUSH LOGIC (Ultra Fast)
-    echo !accent![ SENDING TO CLOUD... ]!Rst!
-    powershell -Command "$old = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; $new = $old + \"`n!line!\"; Invoke-RestMethod -Method Post -Uri 'https://keyvalue.xyz' -Body $new" >nul 2>&1
+    echo !accent![ SENDING... ]!Rst!
+    :: Cleanest Push Logic (No Spaces Allowed in the Raw POST)
+    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
     timeout /t 1 >nul
     goto chat
 )
@@ -109,14 +109,12 @@ goto chat
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo   [ ENGINE SETTINGS ]
-echo %accent%----------------------------------------------------------------------------%Rst%
 echo.
 echo  [A] Accent Color
 echo  [B] Change Chat Tag: [ !chat_tag! ]
 echo  [C] Password Bypass: [ %pass_bypass% ]
 echo.
 echo  [X] SAVE ^& BACK
-echo %accent%----------------------------------------------------------------------------%Rst%
 set /p sc= Selection: 
 if /i "%sc%"=="x" goto save_config
 if /i "%sc%"=="A" (set /p cp= Color: & set "accent=!cp!" & goto settings)
