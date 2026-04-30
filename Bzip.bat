@@ -9,14 +9,14 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.4"
+set "ver=34.5"
 
-:: --- CLOUD REGS ---
+:: --- CLOUD LINKS ---
 set "github_raw=https://githubusercontent.com"
-set "cloud_id=bzip_gold_v4_global"
+set "cloud_id=bzip_gold_v5_global"
 
 :: --- AUTO-UPDATE ENGINE ---
-powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches[1]; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
+powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
 if %errorlevel% EQU 1 (
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_New.bat' -ErrorAction SilentlyContinue"
     echo @echo off > updater.bat
@@ -75,7 +75,8 @@ goto menu
 :chat
 cls
 echo %accent%[ SYNCING GLOBAL CHAT... ]%Rst%
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $v | Out-File '!chatlog!' } else { 'Chat is starting...' | Out-File '!chatlog!' }" 2>nul
+:: Pull only the last 20 messages to prevent lag and cloud overflow
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $lines = $v -split \"`n\"; if($lines.Count -gt 20){ $newV = $lines[-20..-1] -join \"`n\"; $newV | Out-File '!chatlog!' } else { $v | Out-File '!chatlog!' } } else { 'Chat is empty. Be the first to speak!' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -93,10 +94,14 @@ if "%cc%"=="1" (
     if "!chat_tag!"=="NONE" echo !Red!Set a tag in settings!Rst! & pause & goto chat
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
+    
+    :: --- NEW ROBUST SEND ENGINE ---
+    echo !accent![ SENDING... ]!Rst!
     powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
+    timeout /t 1 >nul
     goto chat
 )
-if "%cc%"=="2" (set /p "chat_tag= New Tag: " & goto chat)
+if "%cc%"=="2" (set /p chat_tag= New Tag: & (echo accent=%accent%& echo chat_tag=!chat_tag!& echo pass_bypass=%pass_bypass%) > "%config%" & goto chat)
 goto chat
 
 :settings
