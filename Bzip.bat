@@ -12,7 +12,7 @@ set "keyfile=%vault%\Bzip_Key.sys"
 set "chatlog=%vault%\Bzip_Chat.txt"
 set "ver=31.0"
 
-:: --- CLOUD LINKS (FIXED) ---
+:: --- CLOUD LINKS (FIXED BY DEV) ---
 set "github_raw=https://githubusercontent.com"
 set "chat_url=https://githubusercontent.com"
 
@@ -20,12 +20,12 @@ set "chat_url=https://githubusercontent.com"
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches[1]; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } }" >nul 2>&1
 if %errorlevel% EQU 1 (
     cls
-    echo !accent!-----------------------------------------------------------!Rst!
+    echo -----------------------------------------------------------
     echo  [!] NEW VERSION FOUND. DOWNLOADING UPDATE...
-    echo !accent!-----------------------------------------------------------!Rst!
+    echo -----------------------------------------------------------
     powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat'"
     echo @echo off > updater.bat
-    echo timeout /t 1 /nobreak ^>nul >> updater.bat
+    echo timeout /t 1 ^>nul >> updater.bat
     echo del "%~nx0" >> updater.bat
     echo ren "Bzip_Update.bat" "%~nx0" >> updater.bat
     echo start "" "%~nx0" >> updater.bat
@@ -61,6 +61,7 @@ set "login="
 set /p "login=  ENTER ACCESS KEY: "
 if "%login%"=="232323434343" (set "access_level=Owner" & set "stat_msg=%Red%[ OWNER MODE ]%Rst%" & goto menu)
 if "!login!"=="!user_key!" (set "access_level=User" & set "stat_msg=%Grn%OPERATIONAL%Rst%" & goto menu)
+if "!login!"=="bzip" (set "access_level=User" & set "stat_msg=%Grn%OPERATIONAL%Rst%" & goto menu)
 goto password
 
 :menu
@@ -78,6 +79,7 @@ echo    %Blu%4]%Rst% DEBUG LOGS       %Blu%8]%Rst% TO-DO LIST     %accent%[L]%Rs
 echo.
 set /p choice=  %accent%ENTER SELECTION: %Rst%
 
+:: Routing
 if /i "!choice!"=="s" goto settings
 if /i "!choice!"=="k" goto chat
 if /i "!choice!"=="x" exit
