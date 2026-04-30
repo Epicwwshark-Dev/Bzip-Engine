@@ -9,12 +9,12 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=34.7"
+set "ver=34.8"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: FRESH CLEAN ID
-set "cloud_id=bzip_gold_titanium_sync"
+:: BRAND NEW PRIVATE VAULT ID
+set "cloud_id=bzip_gold_v34_8_safe"
 
 :: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
@@ -75,9 +75,9 @@ goto menu
 
 :chat
 cls
-echo %accent%[ SYNCING GLOBAL CHAT... ]%Rst%
-:: Use Simple REST Pull
-powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v){ $v | Out-File '!chatlog!' } else { 'Welcome!' | Out-File '!chatlog!' }" 2>nul
+echo %accent%[ REFRESHING VAULT... ]%Rst%
+:: Pull only text data, ignore website junk
+powershell -Command "$v = Invoke-RestMethod -Uri 'https://workers.dev!'; if($v -match '<!DOCTYPE' -or $v -match '<html'){ 'System: Vault Refreshed.' | Out-File '!chatlog!' } elseif($v){ $v | Out-File '!chatlog!' } else { 'System: Vault Empty.' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo                            [ GLOBAL CHAT ]
@@ -86,7 +86,7 @@ if exist "!chatlog!" (type "!chatlog!")
 echo.
 echo %accent%----------------------------------------------------------------------------%Rst%
 echo   TAG: !Blu!!chat_tag!!Rst!
-echo   1] Send Message   2] Change Tag   [R] Refresh   [X] Back
+echo   1] Send Message   [R] Refresh   [X] Back
 set /p cc= Choice: 
 
 if /i "%cc%"=="r" goto chat
@@ -96,13 +96,11 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
-    echo !accent![ SENDING... ]!Rst!
-    :: Cleanest Push Logic (No Spaces Allowed in the Raw POST)
-    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
+    :: Safe Send: Blocks messy code from returning
+    powershell -Command "$old = Invoke-RestMethod -Uri 'https://workers.dev!'; if($old -match '<!DOCTYPE'){$old=''}; $new = $old + \"`n!line!\"; $encoded = [uri]::EscapeDataString($new); Invoke-RestMethod -Uri \"https://workers.dev\"" >nul 2>&1
     timeout /t 1 >nul
     goto chat
 )
-if "%cc%"=="2" (set /p chat_tag= New Tag: & (echo accent=%accent%& echo chat_tag=!chat_tag!& echo pass_bypass=%pass_bypass%) > "%config%" & goto chat)
 goto chat
 
 :settings
@@ -115,6 +113,7 @@ echo  [B] Change Chat Tag: [ !chat_tag! ]
 echo  [C] Password Bypass: [ %pass_bypass% ]
 echo.
 echo  [X] SAVE ^& BACK
+echo %accent%----------------------------------------------------------------------------%Rst%
 set /p sc= Selection: 
 if /i "%sc%"=="x" goto save_config
 if /i "%sc%"=="A" (set /p cp= Color: & set "accent=!cp!" & goto settings)
