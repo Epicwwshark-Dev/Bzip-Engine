@@ -9,12 +9,12 @@ set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
 set "chatlog=%vault%\Bzip_Chat.txt"
-set "ver=35.0"
+set "ver=35.1"
 
 :: --- CLOUD REGS ---
 set "github_raw=https://githubusercontent.com"
-:: NEW PRIVATE CLOUD STORAGE
-set "cloud_key=bzip_gold_!computername!_v35"
+:: Using the same stable ID
+set "cloud_id=b36e5200"
 
 :: --- AUTO-UPDATE ---
 powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } } else { exit 0 }" >nul 2>&1
@@ -57,9 +57,9 @@ goto password
 cls
 echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
 echo   [ BZIP GOLD ENGINE ]                                                                        STATUS: !stat_msg!
-echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
+echo ------------------------------------------------------------------------------------------------------------------------
 echo   OFFICIAL OWNER: %accent%EPICWWSHARK%Rst%  (!access_level!)
-echo %accent%------------------------------------------------------------------------------------------------------------------------%Rst%
+echo ------------------------------------------------------------------------------------------------------------------------
 echo.
 echo    %Blu%1]%Rst% BUILD 1.8.9      %Blu%5]%Rst% SCREENSHOTS    %accent%[F]%Rst% ASSET FINDER    [K] %Blu%GLOBAL CHAT%Rst%
 echo    %Blu%2]%Rst% BUILD 26.1.2     %Blu%6]%Rst% PACK FOLDER    %accent%[P]%Rst% CONVERTER    [S] SETTINGS
@@ -74,8 +74,8 @@ goto menu
 
 :chat
 cls
-echo %accent%[ CONNECTING TO NEW CLOUD... ]%Rst%
-:: Using kvstore.io - much cleaner and no ads
+echo %accent%[ DOWNLOADING CLOUD DATA... ]%Rst%
+:: Pull Logic
 powershell -Command "$v = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($v -and $v -notmatch '<html'){ $v | Out-File '!chatlog!' } else { 'System: New Chat Online.' | Out-File '!chatlog!' }" 2>nul
 cls
 echo %accent%----------------------------------------------------------------------------%Rst%
@@ -95,9 +95,10 @@ if "%cc%"=="1" (
     set /p "msg= Message: "
     if "%access_level%"=="Owner" (set "line=[OWNER] !chat_tag!: !msg!") else (set "line=[USER] !chat_tag!: !msg!")
     
+    :: Push Logic with 2-second upload buffer
     echo !accent![ SENDING... ]!Rst%
     powershell -Command "$old = Invoke-RestMethod -Uri 'https://keyvalue.xyz'; if($old -match '<html'){$old=''}; $new = $old + \"`n!line!\"; Invoke-RestMethod -Method Post -Uri 'https://keyvalue.xyz' -Body $new" >nul 2>&1
-    timeout /t 1 >nul
+    timeout /t 2 >nul
     goto chat
 )
 goto chat
