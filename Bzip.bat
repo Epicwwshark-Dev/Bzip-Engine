@@ -8,24 +8,19 @@ set "Gld=[93m" & set "Blu=[94m" & set "Red=[91m" & set "Grn=[92m" & set "Wht
 set "vault=%localappdata%\BzipEngine"
 if not exist "%vault%" md "%vault%"
 set "config=%vault%\Bzip_Settings.cfg"
-set "ver=36.0"
+set "ver=36.1"
 
 :: --- CLOUD LINKS ---
 set "github_raw=https://githubusercontent.com"
 
-:: --- AUTO-UPDATE ENGINE ---
-title Bzip ENGINE [Checking Cloud...]
-powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } else { exit 0 } } else { exit 0 }" >nul 2>&1
+:: --- AUTO-UPDATE & GLOBAL MAINT CHECK ---
+powershell -Command "$web = Invoke-WebRequest -Uri '!github_raw!' -UseBasicParsing -ErrorAction SilentlyContinue; if($web.Content -match 'set \"ver=([0-9.]+)\"'){ $newVer = [float]$matches; if($newVer -gt [float]!ver!){ exit 1 } } exit 0" >nul 2>&1
 if %errorlevel% EQU 1 (
-    cls
-    echo !accent!-----------------------------------------------------------!Rst!
-    echo  [!] NEW VERSION DETECTED. UPDATING ENGINE...
-    echo !accent!-----------------------------------------------------------!Rst!
-    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_New.bat' -ErrorAction SilentlyContinue"
+    powershell -Command "Invoke-WebRequest -Uri '!github_raw!' -OutFile 'Bzip_Update.bat' -ErrorAction SilentlyContinue"
     echo @echo off > updater.bat
     echo timeout /t 1 ^>nul >> updater.bat
     echo del "%~f0" >> updater.bat
-    echo ren "Bzip_New.bat" "Bzip.bat" >> updater.bat
+    echo ren "Bzip_Update.bat" "Bzip.bat" >> updater.bat
     echo start "" "Bzip.bat" >> updater.bat
     echo del updater.bat >> updater.bat
     start /b "" updater.bat
@@ -35,7 +30,25 @@ if %errorlevel% EQU 1 (
 :: --- DEFAULT SETTINGS ---
 set "accent=%Gld%"
 set "pass_bypass=ON"
+set "maint_mode=OFF"
+set "maint_note=SYSTEM UNDER MAINTENANCE"
+
 if exist "%config%" for /f "usebackq tokens=1,2 delims==" %%a in ("%config%") do set "%%a=%%b"
+
+:: --- MAINTENANCE LOCK ---
+if "%maint_mode%"=="ON" (
+    cls
+    echo %Red%----------------------------------------------------------------------------%Rst%
+    echo                            [ SYSTEM LOCKED ]
+    echo %Red%----------------------------------------------------------------------------%Rst%
+    echo.
+    echo  MESSAGE FROM OWNER:
+    echo  "%maint_note%"
+    echo.
+    set /p "m_login=  MASTER KEY TO BYPASS: "
+    if "!m_login!"=="232323434343" (set "access_level=Owner" & set "stat_msg=%Red%[ MAINT BYPASS ]%Rst%" & goto menu)
+    exit
+)
 
 :: Window Setup
 mode con: cols=120 lines=45
@@ -73,10 +86,7 @@ echo.
 set /p choice=  %accent%ENTER SELECTION: %Rst%
 
 if /i "!choice!"=="s" goto settings
-if /i "!choice!"=="8" goto todo
 if /i "!choice!"=="x" exit
-if "!choice!"=="1" set "pver=1" & set "fname=1.8.9 template" & goto create
-if "!choice!"=="2" set "pver=45" & set "fname=26.1.2 template" & goto create
 goto menu
 
 :settings
@@ -87,7 +97,14 @@ echo %accent%-------------------------------------------------------------------
 echo.
 echo  [A] Accent Color
 echo  [B] Password Bypass: [ %pass_bypass% ]
+echo  [C] RESET ENGINE
 echo.
+if "%access_level%"=="Owner" (
+    echo  %Red%[ OWNER SETTINGS ]%Rst%
+    echo  [D] MAINTENANCE MODE: [ %maint_mode% ]
+    echo  [E] EDIT MAINTENANCE NOTE
+    echo.
+)
 echo  [X] SAVE ^& BACK
 echo %accent%----------------------------------------------------------------------------%Rst%
 set /p sc= Selection: 
@@ -95,25 +112,19 @@ set /p sc= Selection:
 if /i "%sc%"=="x" goto save_config
 if /i "%sc%"=="A" (set /p cp= Color: & set "accent=!cp!" & goto settings)
 if /i "%sc%"=="B" (if /i "%pass_bypass%"=="ON" (set "pass_bypass=OFF") else (set "pass_bypass=ON") & goto settings)
+if /i "%sc%"=="C" (del "%config%" & exit)
+
+if "%access_level%"=="Owner" (
+    if /i "%sc%"=="D" (if /i "%maint_mode%"=="ON" (set "maint_mode=OFF") else (set "maint_mode=ON") & goto settings)
+    if /i "%sc%"=="E" (set /p "maint_note= New Note: " & goto settings)
+)
 goto settings
 
 :save_config
-(echo accent=%accent%& echo pass_bypass=%pass_bypass%) > "%config%"
+(
+echo accent=%accent%
+echo pass_bypass=%pass_bypass%
+echo maint_mode=%maint_mode%
+echo maint_note=%maint_note%
+) > "%config%"
 goto menu
-
-:todo
-cls
-echo %accent%[ BZIP TO-DO LIST ]%Rst%
-set "todofile=%vault%\Bzip_ToDo.txt"
-if exist "!todofile!" (type "!todofile!") else (echo Your list is empty.)
-echo.
-echo [1] Add Note  [2] Clear All  [X] Back
-set /p tc= Choice: 
-if "%tc%"=="1" (set /p "n=Note: " & echo - !n! >> "!todofile!" & goto todo)
-if "%tc%"=="2" (del "!todofile!" & goto todo)
-goto menu
-
-:create
-cls
-md "temp" 2>nul
-echo Done! & pause & goto menu
